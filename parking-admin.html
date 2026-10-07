@@ -176,6 +176,7 @@
 
   <footer>
     사용자 화면 미리보기: <a href="parking.html" target="_blank">parking.html →</a><br>
+    통계 보기: <a href="parking-stats.html" target="_blank">parking-stats.html →</a><br>
     <span style="opacity:.75;">이 관리자 페이지 링크는 상태를 바꿀 수 있으니 관리자끼리만 공유하세요.</span>
   </footer>
 </main>
@@ -248,10 +249,19 @@
 
   function setStatus(lotId, status){
     if(!dbRef){ alert('아직 서버에 연결되지 않았어요. 잠시 후 다시 시도해주세요.'); return; }
+    const ts = firebase.database.ServerValue.TIMESTAMP;
+    const changed = (state[lotId] || {}).status !== status;
     dbRef.child('parking/' + lotId).update({
       status: status,
-      updatedAt: firebase.database.ServerValue.TIMESTAMP
+      updatedAt: ts
     });
+    // 통계용 로그 — 상태가 실제로 바뀔 때만 기록을 하나씩 쌓음 (덮어쓰지 않음)
+    if(changed){
+      dbRef.child('parking_log/' + lotId).push({
+        status: status,
+        timestamp: ts
+      });
+    }
   }
 
   function todayStr(){
