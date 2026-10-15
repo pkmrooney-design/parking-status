@@ -313,5 +313,34 @@
   init();
 })();
 </script>
+  <script>
+(function () {
+  function checkAutoRefresh() {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    // 오전 9시부터 오후 6시까지 매시 정각
+    if (hour >= 9 && hour <= 18 && minute === 0) {
+      const dateKey =
+        now.getFullYear() + '-' +
+        (now.getMonth() + 1) + '-' +
+        now.getDate() + '-' + hour;
+
+      const storageKey = 'parkingAutoReload';
+
+      // 같은 시간대의 중복 새로고침 방지
+      if (sessionStorage.getItem(storageKey) !== dateKey) {
+        sessionStorage.setItem(storageKey, dateKey);
+        location.reload();
+      }
+    }
+  }
+
+  // 페이지 진입 시 확인하고 이후 10초마다 확인
+  checkAutoRefresh();
+  setInterval(checkAutoRefresh, 10000);
+})();
+</script>
 </body>
 </html>
