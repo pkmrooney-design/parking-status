@@ -192,8 +192,9 @@
     const d = new Date(ts);
     const now = new Date();
     const timeStr = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
-    if(d.toDateString() === now.toDateString()) return timeStr + ' 업데이트';
-    return (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + timeStr + ' 업데이트';
+    // updatedAt은 관리자가 상태를 바꾸거나 "그대로 확인"을 누른 시각
+    if(d.toDateString() === now.toDateString()) return '관리자 확인 ' + timeStr;
+    return '관리자 확인 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + timeStr;
   }
 
   function render(){
@@ -210,24 +211,33 @@
     }).join('');
   }
 
-  function todayStr(){
+  function nowStr(){
     const d = new Date();
     const days = ['일','월','화','수','목','금','토'];
-    return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+    const timeStr = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]}) ${timeStr} 기준`;
   }
+
+  // 실시간 연결이 살아 있는 동안은 지금 보이는 내용이 곧 최신이므로 "현재 시각 기준"으로 표시
+  let connected = false;
+  function updateConnBar(){
+    if(connected){
+      connBar.textContent = '🟢 실시간 연결됨 · ' + nowStr();
+      connBar.className = 'on';
+    } else {
+      connBar.textContent = '🔴 연결 끊김 · 재접속 중…';
+      connBar.className = 'off';
+    }
+  }
+  setInterval(updateConnBar, 30 * 1000);
 
   function init(){
     firebase.initializeApp(FIREBASE_CONFIG);
     const db = firebase.database();
 
     db.ref('.info/connected').on('value', snap => {
-      if(snap.val()){
-        connBar.textContent = '🟢 실시간 연결됨 · ' + todayStr();
-        connBar.className = 'on';
-      } else {
-        connBar.textContent = '🔴 연결 끊김 · 재접속 중…';
-        connBar.className = 'off';
-      }
+      connected = !!snap.val();
+      updateConnBar();
     });
 
     LOTS.forEach(lot => {
